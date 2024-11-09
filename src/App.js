@@ -179,7 +179,7 @@ const App = () => {
       const message = {
         type: 'ENTER',
         roomId: roomId,
-        sender: "이승훈",
+        sender: "김호연",
         message: "asdasd"
       };
       socket.send(JSON.stringify(message));
@@ -201,7 +201,7 @@ const App = () => {
         type: 'GAME',
         roomId: roomId,
         message: chatMessage,
-        sender: "이승훈",
+        sender: "김호연",
         timestamp: new Date().toISOString()
       };
       
@@ -209,7 +209,7 @@ const App = () => {
       
       // 로컬 채팅 로그에도 추가
       setChatLog(prevLog => [...prevLog, {
-        sender: "이승훈",
+        sender: "김호연",
         message: chatMessage,
         timestamp: new Date().toISOString()
       }]);
@@ -223,7 +223,7 @@ const App = () => {
   const createRoom = async () => {
     try {
       const response = await axios.post("https://port-0-yhatzeeback-m39re8g35ae5a423.sel4.cloudtype.app/game/createroom", {
-        "name": "이승훈"
+        "name": "김호연"
       })
       console.log(response.data.roomId);
     }
@@ -263,7 +263,7 @@ const App = () => {
               {chatLog.map((chat, index) => (
                 <ChatMessage 
                   key={index} 
-                  isSelf={chat.sender === "이승훈"}
+                  isSelf={chat.sender === "김호연"}
                 >
                   <strong>{chat.sender}:</strong> {chat.message}
                 </ChatMessage>
