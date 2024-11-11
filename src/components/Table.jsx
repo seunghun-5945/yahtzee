@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
+import axios from "axios";
+import RankRegister from "./RankRegister";
 
 const Container = styled.div`
-  width: 100%;
+  width: 30%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  border: 3px solid red;
 `;
 
 const RowBoxContainer = styled.div`
   width: 100%;
   height: 6%;
   display: flex;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid ligtgray;
 `;
 
 const TagBox = styled.div`
@@ -22,7 +23,7 @@ const TagBox = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid black;
+  border: 1px solid lightgray;
 `;
 
 const UserNameArea = styled.button`
@@ -31,8 +32,10 @@ const UserNameArea = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid black;
+  border: 1px solid lightgray;
+  background-color: white;
   cursor: pointer;
+  box-sizing: border-box;
 `;
 
 const EnemyNameArea = styled.div`
@@ -41,7 +44,7 @@ const EnemyNameArea = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid black;
+  border: 1px solid lightgray;
 `;
 
 const RowBox = ({ tagName, userName, enemyName, onClick }) => {
@@ -62,7 +65,7 @@ const Table = ({ DiceResult, playerCnt, setPlayerCnt }) => {
   const [fours, setFours] = useState();
   const [fives, setFives] = useState();
   const [sixes, setSixes] = useState();
-  const [tok,setToK] = useState(0);
+  const [tok,setToK] = useState();
   const [fok, setFoK] = useState();
   const [fullHouse, setFullHouse] = useState( );
   const [smallStraight, setSmallStraight] = useState( );
@@ -72,7 +75,8 @@ const Table = ({ DiceResult, playerCnt, setPlayerCnt }) => {
   const [total, setTotal] = useState( );
   const [roundCnt, setRoundCnt] = useState(0);
   const [clickedButtons, setClickedButtons] = useState(new Set());
-  const [sum, setSum] = useState(0); // Sum 상태 추가
+  const [sum, setSum] = useState(); // Sum 상태 추가
+  const [openModal, setOpenModal] = useState(false);
 
   // 각 항목이 변경될 때마다 Sum을 업데이트합니다.
   useEffect(() => {
@@ -81,16 +85,22 @@ const Table = ({ DiceResult, playerCnt, setPlayerCnt }) => {
   }, [ones, twos, threes, fours, fives, sixes]);
 
   useEffect(() => {
-    if (roundCnt == 10) {
-      console.log("게임끝");
-        // 각 항목 점수의 합을 계산하여 total에 저장
+    if (roundCnt == 11) {
+      // 각 항목 점수의 합을 계산하여 total에 저장
       const sumTotal = 
-      (ones || 0) + (twos || 0) + (threes || 0) + (fours || 0) + (fives || 0) + (sixes || 0) +
-      (tok || 0) + (fok || 0) + (fullHouse || 0) + (smallStraight || 0) +
-      (largeStragiht || 0) + (chance || 0) + (yhatzee || 0);
+        (ones || 0) + (twos || 0) + (threes || 0) + (fours || 0) + 
+        (fives || 0) + (sixes || 0) + (tok || 0) + (fok || 0) + 
+        (fullHouse || 0) + (smallStraight || 0) + (largeStragiht || 0) + 
+        (chance || 0) + (yhatzee || 0);
+      
       setTotal(sumTotal);
+      // total state가 업데이트된 후에 localStorage에 저장하기 위해
+      // 새로 계산된 sumTotal 값을 직접 사용
+      localStorage.setItem("userScore", sumTotal.toString());
+      alert("게임끝");
+      setOpenModal(true);
     }
-  }, [roundCnt])
+  }, [roundCnt]);
 
   const onClickOnes = () => {
     if (clickedButtons.has('ones')) return;  // 이미 클릭된 버튼이면 함수 종료
@@ -170,42 +180,38 @@ const Table = ({ DiceResult, playerCnt, setPlayerCnt }) => {
     const counts = {};
     DiceResult.forEach(num => counts[num] = (counts[num] || 0) + 1);
   
-    // 빈도가 3 이상인 숫자를 찾아 그 숫자들의 합을 계산
-    const sum = Object.keys(counts).reduce((acc, num) => {
-      if (counts[num] >= 3) {
-        acc += num * counts[num]; // 해당 숫자의 빈도만큼 곱하여 더함
-      }
-      return acc;
-    }, 0);
+    // 빈도가 3 이상인 숫자가 있는지 확인
+    const hasThreeOfKind = Object.values(counts).some(count => count >= 3);
+
+    // Three of a Kind 조건을 만족하면 모든 주사위의 합을 계산, 아니면 0
+    const sum = hasThreeOfKind ? DiceResult.reduce((acc, curr) => acc + curr, 0) : 0;
   
     setToK(sum);
     setClickedButtons(prev => new Set([...prev, 'tok']));
     setPlayerCnt(3);
     setRoundCnt(roundCnt + 1);
     console.log(roundCnt);
-  };
+};
   
-  const onClickFourOfaKind = () => {
-    if (clickedButtons.has('fok')) return;  // 이미 클릭된 버튼이면 함수 종료
-    if (playerCnt == 3) return;
+const onClickFourOfaKind = () => {
+  if (clickedButtons.has('fok')) return;  // 이미 클릭된 버튼이면 함수 종료
+  if (playerCnt === 3) return;
+  
+  const counts = {};
+  DiceResult.forEach(num => counts[num] = (counts[num] || 0) + 1);
 
-    // 주사위 결과 각 숫자의 빈도를 저장할 객체 생성
-    const counts = {};
-    DiceResult.forEach(num => counts[num] = (counts[num] || 0) + 1);
-  
-    // 빈도가 4 이상인 숫자를 찾아 그 숫자들의 합을 계산
-    const sum = Object.keys(counts).reduce((acc, num) => {
-      if (counts[num] >= 4) {
-        acc += num * counts[num]; // 해당 숫자의 빈도만큼 곱하여 더함
-      }
-      return acc;
-    }, 0);
-    setFoK(sum);
-    setClickedButtons(prev => new Set([...prev, 'fok']));
-    setPlayerCnt(3);
-    setRoundCnt(roundCnt + 1);
-    console.log(roundCnt);
-  };
+  // hasFourOfKind로 변수명 수정 (hasThreeOfKind에서)
+  const hasFourOfKind = Object.values(counts).some(count => count >= 4);
+
+  const sum = hasFourOfKind ? DiceResult.reduce((acc, curr) => acc + curr, 0) : 0;
+
+  // setToK에서 setFoK로 수정
+  setFoK(sum);
+  setClickedButtons(prev => new Set([...prev, 'fok']));
+  setPlayerCnt(3);
+  setRoundCnt(roundCnt + 1);
+  console.log(roundCnt);
+};
   
   const onClickFullHouse = () => {
     if (clickedButtons.has('fullHouse')) return;  // 이미 클릭된 버튼이면 함수 종료
@@ -308,9 +314,9 @@ const Table = ({ DiceResult, playerCnt, setPlayerCnt }) => {
     console.log(roundCnt);
   };  
 
-
   return (
     <Container>
+      {openModal && <RankRegister />}
       <RowBox enemyName="CPU" />
       <RowBox tagName="Ones" onClick={onClickOnes} userName={ones}/>
       <RowBox tagName="Twos" onClick={onClickTwos} userName={twos}/>
